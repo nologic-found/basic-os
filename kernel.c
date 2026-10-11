@@ -1,33 +1,58 @@
-// written by Bradley
-// a very small kernel that prints hello world
 
-main()
+void printString(char *);
+void printChar(char);
+
+int main()
 {
 
-	putInMemory(0xb800, 0, 'H');
-	putInMemory(0xB800, 1, 0x7);
-	putInMemory(0xB800, 2, 'e');
-	putInMemory(0xB800, 3, 0x7);
-	putInMemory(0xB800, 4, 'l');
-	putInMemory(0xB800, 5, 0x7);
-	putInMemory(0xB800, 6, 'l');
-	putInMemory(0xB800, 7, 0x7);
-	putInMemory(0xB800, 8, 'o');
-	putInMemory(0xB800, 9, 0x7);
-	putInMemory(0xB800, 0xA, ' ');
-	putInMemory(0xB800, 0xB, 0x7);
-	putInMemory(0xB800, 0xC, 'W');
-	putInMemory(0xB800, 0xD, 0x7);
-	putInMemory(0xB800, 0xE, 'o');
-	putInMemory(0xB800, 0xF, 0x7);
-	putInMemory(0xB800, 10, 'r');
-	putInMemory(0xB800, 11, 0x7);
-	putInMemory(0xB800, 12, 'l');
-	putInMemory(0xB800, 13, 0x7);
-	putInMemory(0xB800, 14, 'd');
-	putInMemory(0xB800, 15, 0x7);
+	char *msg = "Hi there ";
+	// int offset = 0;
+	// while(msg[lettercount] != '\0'){
+	// 	int offset = lettercount*2;
+	// 	putInMemory(0xb800,offset,msg[lettercount]);
+	// 	putInMemory(0xb800,offset+1,color);
+	// 	lettercount++;
+	// }
 
+	printString(msg);
 	while (1)
 	{
 	}
+}
+
+/**
+ * Prints character array to screen
+ * 
+ * Detail about Int 10/AH=0Eh
+ * https://www.ctyme.com/intr/rb-0106.htm	
+ */
+void printString(char *chars)
+{
+	int i = 0;
+	while (chars[i] != '\0')
+	{
+		char ah = 0xe;
+		char al = chars[i];
+		int ax = ah * 256 + al;
+
+		// prints one character at the current cursor position
+		interrupt(0x10, ax, 0, 0, 0);
+		i++;
+	}
+}
+
+/**
+ * Prints one character to screen
+ * 
+ * Detail about Int 10/AH=0Eh
+ * https://www.ctyme.com/intr/rb-0106.htm	
+ */
+void printChar(char c)
+{
+	char ah = 0xe;
+	char al = c;
+	int ax = ah * 256 + al;
+
+	// prints one character at the current cursor position
+	interrupt(0x10, ax, 0, 0, 0);
 }

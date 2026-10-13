@@ -2,6 +2,7 @@
 void printString(char *);
 void printChar(char);
 void readString(char *);
+void readSector(char *, int);
 
 int main()
 {
@@ -11,6 +12,11 @@ int main()
 	printString(prompt);
 	readString(line);
 	printString(line);
+
+	// test readSector
+	char buffer[512];
+	readSector(buffer, 30);
+	printString(buffer);
 
 	// Keeps kernel running as it should never stop
 	while (1)
@@ -26,7 +32,7 @@ int main()
  */
 void printString(char *chars)
 {
-	char end_of_string = 0x0;  
+	char end_of_string = 0x0;
 	int i = 0;
 	while (chars[i] != end_of_string)
 	{
@@ -72,7 +78,7 @@ void readString(char *line)
 	char empty_space = 0x20;
 	int i = 0;
 
-	while (i<80)
+	while (i < 80)
 	{
 		char key_pressed = interrupt(0x16, 0, 0, 0, 0);
 
@@ -101,9 +107,32 @@ void readString(char *line)
 			printChar(end_of_string);
 			printChar(key_pressed);
 			line[i] = line_feed;
-			line[i+1] = end_of_string;
+			line[i + 1] = end_of_string;
 		}
 		break;
-
 	}
+}
+
+/**
+ * DISK - READ SECTOR(S) INTO MEMORY
+ *
+ * https://www.ctyme.com/intr/rb-0607.htm
+ */
+void readSector(char *buffer, int sector)
+{
+	int ah = 2;
+	int al = 1;
+	int ax = ah * 256 + al;
+
+	int bx = &buffer; 
+
+	int ch = 0;
+	int cl = sector + 1;
+	int cx = ch * 256 + cl;
+
+	int dh = 0;
+	int dl = 0x80;
+	int dx = dh * 256 + dl;
+
+	
 }

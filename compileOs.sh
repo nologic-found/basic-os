@@ -21,3 +21,5 @@ ld86 -d -o kernel kernel_c.o kernel_asm.o
 # Put kernel in sector 3 of the disk
 dd if=kernel of=diskc.img bs=512 conv=notrunc seek=3
 
+# Add secret file on disk
+dd if=message.txt of=diskc.img bs=512 count=1 seek=30 conv=notrunc

@@ -1,4 +1,3 @@
-;kernel_asm.asm
 ;Margaret Black, 2007
 ;kernel_asm.asm contains assembly functions that you can use in your kernel
 .global _putInMemory
@@ -26,13 +25,13 @@ _interrupt:
 	mov ax,[bp+4] 
 
 	;get the interrupt number in AL
-	push ds 
+	push ds
 
 	;use self-modifying code to call the right interrupt
 	mov bx,cs
 	mov ds,bx
 	mov si,#intr
-	mov [si+1],al 
+	mov [si+1],al
 
 	;change the 00 below to the contents of AL
 	pop ds
@@ -60,19 +59,3 @@ _makeInterrupt21:
 	mov ax,cs ;have interrupt go to the current segment
 	mov [si+2],ax
 	mov [si],dx ;set up our vector
-	pop ds
-	ret
-;this is called when interrupt 21 happens
-;it will call your function:
-;void handleInterrupt21 (int AX, int BX, int CX, int DX)
-_interrupt21ServiceRoutine:
-	push dx
-	push cx
-	push bx
-	push ax
-	call _handleInterrupt21
-	pop ax
-	pop bx
-	pop cx
-	pop dx
-	iret

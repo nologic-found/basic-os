@@ -23,3 +23,5 @@ dd if=kernel of=diskc.img bs=512 conv=notrunc seek=3
 
 # Add secret file on disk
 dd if=message.txt of=diskc.img bs=512 count=1 seek=30 conv=notrunc
+
+java -jar simulator.jar

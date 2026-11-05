@@ -103,20 +103,21 @@ void readString(char *line)
 			if (i > 0)
 			{
 				i--;
-				printChar(key_pressed);
+				printChar(backspace);//printChar(key_pressed);
 				printChar(empty_space);
-				printChar(key_pressed);
+				printChar(backspace);//printChar(key_pressed);
 			}
 			continue;
 		}
 		if (key_pressed == enter_key)
 		{
-			i++;
+			line[i] = line_feed;//i++; 
 			printChar(line_feed);
-			printChar(end_of_string);
+			i++;
+			line[i] = end_of_string;//printChar(end_of_string);
 			printChar(key_pressed);
-			line[i] = line_feed;
-			line[i + 1] = end_of_string;
+			//line[i] = line_feed;
+			//line[i + 1] = end_of_string;
 		}
 		break;
 	}

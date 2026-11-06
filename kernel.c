@@ -9,14 +9,20 @@ void printChar(char);
 void readString(char *);
 void readSector(char *, int);
 void handleInterrupt21(int, int, int, int);
-
+void readFile(char *);
 main()
 {
 	char line[80];
 	char buffer[512];
 
+	int sectorsRead;
+	char fileBuffer[13312];	
 	makeInterrupt21();
-
+	interrupt(0x21, 3, "messag", fileBuffer, &sectorsRead); /*read the file into buffer*/
+		if(sectorsRead>0)
+			interrupt(0x21, 0, fileBuffer, 0,0); /*print out the file*/
+		else
+			interrupt(0x21, 0, "message not found\r\n",0,0); /*print  an error if no sectors are read*/
 	//	testing read sector from my teammates code
 
 	interrupt(0x21, 2, buffer, 30, 0); // Read sector 30 where message.txt should be
@@ -27,14 +33,12 @@ main()
 	interrupt(0x21, 0, buffer, 0, 0); // Print Sector content
 	interrupt(0x21, 0, "\n\r", 0, 0); // Stop looking like bricked trash
 
-	//      interrupt(0x21,0, "Is interrupt 21 working? \r\n", 0,0);
+      interrupt(0x21,0, "Is interrupt 21 working? \r\n", 0,0);
 
 	interrupt(0x21, 1, line, 0, 0);
 	interrupt(0x21, 0, line, 0, 0);
-
-	while (1)
-	{
-	}
+	
+	while(1){}
 	return 0;
 }
 
@@ -161,8 +165,44 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 		readSector((char *)bx, cx);
 		//		readSector(bx, cx);
 	}
+	else if (ax == 3){
+		readFile((char *)bx, cx, dx);
+	}
 	else
 	{
-		printString("yeah idk what u did, so idk what to do");
+		printString("error: value of ax must be 0, 1, 2, or 3.");
+	}
+	
+	break;
+}
+
+
+
+
+void readFile(char* filename){
+	char* dir;
+
+	dir = interrupt(2, buffer, 2); 
+	for(int fileentry = 0; fileentry < 512; fileentry +=32){ //loads the directory sector into 512 char array
+		 for(int i = 0; i < 7, i++){ //looks for filename
+			if (filename[i]==dir[fileentry+i]){ //if first byte is also the first byte of the filename do nothing
+				continue;
+			}
+			else if (i = 6){ // if we made it to the 7th byte (first byte after filename)
+				for(int sectorsRead = 0; int sectorsRead < 26; sectorsRead++){
+					int i = 1;
+					interrupt(2, buffer + 512*i, dir[fileentry + sectorsRead++);
+					i++;
+					if (fileentry[sectorsRead] == 0){
+						sectorsRead = 0;
+						break;
+					}
+				}
+			}
+			else {
+				break;
+
+			}
+		} 
 	}
 }

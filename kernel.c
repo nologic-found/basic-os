@@ -28,6 +28,11 @@ main()
 		interrupt(0x21, 0, "message not found\r\n",0,0); // error report
 	}
 
+	interrupt(0x21,0,"\r",0,0); // stop being ugly
+        interrupt(0x21, 1, line, 0, 0);
+        interrupt(0x21, 0, line, 0, 0);
+
+
 	while(1){}
 	return 0;
 }

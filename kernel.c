@@ -9,35 +9,25 @@ void printChar(char);
 void readString(char *);
 void readSector(char *, int);
 void handleInterrupt21(int, int, int, int);
-void readFile(char *);
+void readFile(char *, char *, int *);
 main()
 {
 	char line[80];
 	char buffer[512];
 
 	int sectorsRead;
-	char fileBuffer[13312];	
+	char fileBuffer[13312]; // maximum file size
 	makeInterrupt21();
-	interrupt(0x21, 3, "messag", fileBuffer, &sectorsRead); /*read the file into buffer*/
-		if(sectorsRead>0)
-			interrupt(0x21, 0, fileBuffer, 0,0); /*print out the file*/
-		else
-			interrupt(0x21, 0, "message not found\r\n",0,0); /*print  an error if no sectors are read*/
-	//	testing read sector from my teammates code
 
-	interrupt(0x21, 2, buffer, 30, 0); // Read sector 30 where message.txt should be
+	interrupt(0x21,3,"messag", fileBuffer, &sectorsRead);
 
-	buffer[511] = 0; // Ensure printString stops before crashing out of buffer
-	buffer[78] = 0;	 // Fixed extra newlining?
+	if(sectorsRead>0){
+		interrupt(0x21, 0, fileBuffer, 0,0); // print the file
+	}else
+	{
+		interrupt(0x21, 0, "message not found\r\n",0,0); // error report
+	}
 
-	interrupt(0x21, 0, buffer, 0, 0); // Print Sector content
-	interrupt(0x21, 0, "\n\r", 0, 0); // Stop looking like bricked trash
-
-      interrupt(0x21,0, "Is interrupt 21 working? \r\n", 0,0);
-
-	interrupt(0x21, 1, line, 0, 0);
-	interrupt(0x21, 0, line, 0, 0);
-	
 	while(1){}
 	return 0;
 }
@@ -67,6 +57,7 @@ void printString(char *chars)
 }
 
 /**
+ * print a single character
  * @author Kaitlyn
  */
 void printChar(char c)
@@ -128,6 +119,7 @@ void readString(char *line)
 }
 
 /**
+ * Reads the sector at int sector and prints it into the buffer
  * @author Kaityln
  */
 void readSector(char *buffer, int sector)
@@ -145,7 +137,7 @@ void readSector(char *buffer, int sector)
 }
 
 /**
- * @author Cecilia
+ * @author Cecilia, Kaitlyn
  */
 void handleInterrupt21(int ax, int bx, int cx, int dx)
 {
@@ -162,47 +154,80 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 	}
 	else if (ax == 2)
 	{
+
 		readSector((char *)bx, cx);
 		//		readSector(bx, cx);
 	}
 	else if (ax == 3){
-		readFile((char *)bx, cx, dx);
+		readFile((char *)bx, (char *)cx, (int *)dx);
 	}
 	else
 	{
 		printString("error: value of ax must be 0, 1, 2, or 3.");
 	}
-	
-	break;
+
 }
 
 
+/**
+ *@Author Cecilia, Kaitlyn
+*/
 
+void readFile(char *filename, char *buffer, int *sectorRead){
+	// Init
+	char dir[512];
 
-void readFile(char* filename){
-	char* dir;
+        int fileentry; // used to track the entry
+        int i; // used to check the 6 entires
+        int bufferOffset; // used to avoid overwriting our data when we write to the fileBuffer
+        int sectorsLoaded; // used to track how many sectors have already been proccessed
 
-	dir = interrupt(2, buffer, 2); 
-	for(int fileentry = 0; fileentry < 512; fileentry +=32){ //loads the directory sector into 512 char array
-		 for(int i = 0; i < 7, i++){ //looks for filename
-			if (filename[i]==dir[fileentry+i]){ //if first byte is also the first byte of the filename do nothing
-				continue;
-			}
-			else if (i = 6){ // if we made it to the 7th byte (first byte after filename)
-				for(int sectorsRead = 0; int sectorsRead < 26; sectorsRead++){
-					int i = 1;
-					interrupt(2, buffer + 512*i, dir[fileentry + sectorsRead++);
-					i++;
-					if (fileentry[sectorsRead] == 0){
-						sectorsRead = 0;
-						break;
-					}
-				}
-			}
-			else {
+	*sectorRead = 0;
+
+	// Peak inside sector 2
+	readSector(dir,2);
+
+	// Read the directory one entry at a time
+	for(fileentry = 0; fileentry <512; fileentry += 32) // Each entry is 32 bytes
+	{
+		// Search the 6 entries for the right name
+		for(i=0; i<6;i++)
+		{
+			// If at any point the expected name does not match, LEAVE NOW
+			if(filename[i] != dir[fileentry+i])
+			{
+				// Because we are breaking, sectorRead remains zero unless otherwise stated
 				break;
-
 			}
-		} 
+		}
+
+			// if we didn't break, then the file name is correct
+		if(i==6)
+		{
+			// We are in the first 512 bytes
+			bufferOffset = 0;
+
+			// There are only 26 sectors, so we are looping through all 26
+			for(sectorsLoaded = 0; sectorsLoaded<26; sectorsLoaded++)
+			{
+				// check the sector in the directory, if it is zero then we have run out of sectors
+				if(dir[fileentry+i+sectorsLoaded]==0)
+				{
+					break;
+				}
+
+				// If it is not zero, write it into the buffer
+				readSector(buffer + bufferOffset, dir[fileentry+6+sectorsLoaded]);
+
+				// protect the data you just wrote
+				bufferOffset += 512;
+				(*sectorRead)++;
+			}
+			// go home
+			return;
+		}
 	}
 }
+
+
+

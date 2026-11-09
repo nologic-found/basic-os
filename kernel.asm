@@ -1,7 +1,7 @@
-;kernel_asm.asm
+;kernel.asm
 ;Margaret Black, 2007
 
-;kernel_asm.asm contains assembly functions that you can use in your kernel
+;kernel.asm contains assembly functions that you can use in your kernel
 
 	.global _putInMemory
 	.global _interrupt

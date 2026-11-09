@@ -9,28 +9,20 @@ void printChar(char);
 void readString(char *);
 void readSector(char *, int);
 void handleInterrupt21(int, int, int, int);
+void readFile(char *, char *, int *);
+void testReadFile();
 
 main()
 {
 	char line[80];
 	char buffer[512];
+	int sectorsRead;
+	char fileBuffer[13312];
 
 	makeInterrupt21();
 
-	//	testing read sector from my teammates code
+	testReadFile();
 
-	interrupt(0x21, 2, buffer, 30, 0); // Read sector 30 where message.txt should be
-
-	buffer[511] = 0; // Ensure printString stops before crashing out of buffer
-	buffer[78] = 0;	 // Fixed extra newlining?
-
-	interrupt(0x21, 0, buffer, 0, 0); // Print Sector content
-	interrupt(0x21, 0, "\n\r", 0, 0); // Stop looking like bricked trash
-
-	//      interrupt(0x21,0, "Is interrupt 21 working? \r\n", 0,0);
-
-	interrupt(0x21, 1, line, 0, 0);
-	interrupt(0x21, 0, line, 0, 0);
 
 	while (1)
 	{
@@ -103,20 +95,21 @@ void readString(char *line)
 			if (i > 0)
 			{
 				i--;
-				printChar(key_pressed);
+				printChar(backspace); // printChar(key_pressed);
 				printChar(empty_space);
-				printChar(key_pressed);
+				printChar(backspace); // printChar(key_pressed);
 			}
 			continue;
 		}
 		if (key_pressed == enter_key)
 		{
-			i++;
+			line[i] = line_feed; // i++;
 			printChar(line_feed);
-			printChar(end_of_string);
+			i++;
+			line[i] = end_of_string; // printChar(end_of_string);
 			printChar(key_pressed);
-			line[i] = line_feed;
-			line[i + 1] = end_of_string;
+			// line[i] = line_feed;
+			// line[i + 1] = end_of_string;
 		}
 		break;
 	}
@@ -139,6 +132,75 @@ void readSector(char *buffer, int sector)
 	interrupt(0x13, ax, buffer, cx, dx);
 }
 
+void readFile(char *filename, char *buffer, int *sectorsRead)
+{
+
+	char dir[512];
+	int fileentry= 0;
+	int match = 0;
+	int i = 0;
+	int sectorOffset = 0;
+	int currentSector = 0;
+
+	*sectorsRead = 0;
+	
+	readSector(dir, 2);
+	// Iterating over directory sector
+	for (fileentry = 0; fileentry < 512; fileentry += 32)
+	{
+		match = 1;
+		// check that the entry is empty
+		if (dir[fileentry] == 0)
+		{
+			continue;
+		}
+
+		// check entry's filename against param
+		for (i = 0; i < 6; i++)
+		{
+
+			if (filename[i] != dir[fileentry + i])
+			{
+				match = 0;
+				break;
+			}
+			// test
+			printChar(i);
+		}
+
+		// if we're here then, the entry is not empty and the names match.
+		// in this case, load each sector encountered to buffer until we find
+		// a zero or reach the end of the entry (< 26 bytes)
+		if (match)
+		{
+			i = 0;
+			sectorOffset = fileentry + 6;
+			while (i < 26 && dir[sectorOffset] != 0)
+			{
+				currentSector = dir[sectorOffset];
+				// interrupt(2, buffer + 512*i, dir[fileentry + sectorsRead++]);
+				readSector(buffer + 512 * i, currentSector);
+				i++;
+				(*sectorsRead)++;
+				sectorOffset++;
+			}
+			return;
+		}
+	}
+}
+
+void testReadFile()
+{
+	char buffer[13312]; /*this is the maximum size of a file*/
+	int sectorsRead;
+	makeInterrupt21();
+	interrupt(0x21, 3, "messag", buffer, &sectorsRead); /*read the file into buffer*/
+	if (sectorsRead > 0)
+		interrupt(0x21, 0, buffer, 0, 0); /*print out the file*/
+	else
+		interrupt(0x21, 0, "messag not found\r\n", 0, 0); /*no sectors read? then print an error*/
+}
+
 /**
  * @author Cecilia
  */
@@ -159,6 +221,10 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 	{
 		readSector((char *)bx, cx);
 		//		readSector(bx, cx);
+	}
+	else if (ax == 3)
+	{
+		readFile((char *)bx, (char *)cx, (int *)dx);
 	}
 	else
 	{

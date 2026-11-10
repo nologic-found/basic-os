@@ -192,27 +192,26 @@ void readFile(char *filename, char *buffer, int *sectorRead){
 	// Peak inside sector 2
 	readSector(dir,2);
 
-	// Read the directory one entry at a time
 	for(fileentry = 0; fileentry <512; fileentry += 32) // Each entry is 32 bytes
 	{
 		// Search the 6 entries for the right name
 		for(i=0; i<6;i++)
 		{
-			// If at any point the expected name does not match, LEAVE NOW
+
 			if(filename[i] != dir[fileentry+i])
 			{
-				// Because we are breaking, sectorRead remains zero unless otherwise stated
+				// Because we are breaking, sectorRead remains zero
 				break;
 			}
 		}
 
-			// if we didn't break, then the file name is correct
+		// if we didn't break, then the file name is correct
 		if(i==6)
 		{
 			// We are in the first 512 bytes
 			bufferOffset = 0;
 
-			// There are only 26 sectors, so we are looping through all 26
+			// There are only 26 sectors
 			for(sectorsLoaded = 0; sectorsLoaded<26; sectorsLoaded++)
 			{
 				// check the sector in the directory, if it is zero then we have run out of sectors
@@ -221,14 +220,13 @@ void readFile(char *filename, char *buffer, int *sectorRead){
 					break;
 				}
 
-				// If it is not zero, write it into the buffer
 				readSector(buffer + bufferOffset, dir[fileentry+6+sectorsLoaded]);
 
 				// protect the data you just wrote
 				bufferOffset += 512;
 				(*sectorRead)++;
 			}
-			// go home
+
 			return;
 		}
 	}

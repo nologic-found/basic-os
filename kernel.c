@@ -10,6 +10,11 @@ void readString(char *);
 void readSector(char *, int);
 void handleInterrupt21(int, int, int, int);
 void readFile(char *, char *, int *);
+void executeProgram(char *);
+
+void putInMemory(int, int, char);
+void launchProgram(int);
+
 main()
 {
 	char line[80];
@@ -17,6 +22,7 @@ main()
 
 	int sectorsRead;
 	char fileBuffer[13312]; // maximum file size
+
 	makeInterrupt21();
 
 	interrupt(0x21,3,"messag", fileBuffer, &sectorsRead);
@@ -32,6 +38,7 @@ main()
         interrupt(0x21, 1, line, 0, 0);
         interrupt(0x21, 0, line, 0, 0);
 
+	interrupt(0x21,4,"tstpr1",0,0);
 
 	while(1){}
 	return 0;
@@ -166,7 +173,10 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 	else if (ax == 3){
 		readFile((char *)bx, (char *)cx, (int *)dx);
 	}
-	else
+	else if (ax ==4)
+	{
+		executeProgram((char *)bx);
+	}else
 	{
 		printString("error: value of ax must be 0, 1, 2, or 3.");
 	}
@@ -192,27 +202,26 @@ void readFile(char *filename, char *buffer, int *sectorRead){
 	// Peak inside sector 2
 	readSector(dir,2);
 
-	// Read the directory one entry at a time
 	for(fileentry = 0; fileentry <512; fileentry += 32) // Each entry is 32 bytes
 	{
 		// Search the 6 entries for the right name
 		for(i=0; i<6;i++)
 		{
-			// If at any point the expected name does not match, LEAVE NOW
+
 			if(filename[i] != dir[fileentry+i])
 			{
-				// Because we are breaking, sectorRead remains zero unless otherwise stated
+				// Because we are breaking, sectorRead remains zero
 				break;
 			}
 		}
 
-			// if we didn't break, then the file name is correct
+		// if we didn't break, then the file name is correct
 		if(i==6)
 		{
 			// We are in the first 512 bytes
 			bufferOffset = 0;
 
-			// There are only 26 sectors, so we are looping through all 26
+			// There are only 26 sectors
 			for(sectorsLoaded = 0; sectorsLoaded<26; sectorsLoaded++)
 			{
 				// check the sector in the directory, if it is zero then we have run out of sectors
@@ -221,17 +230,49 @@ void readFile(char *filename, char *buffer, int *sectorRead){
 					break;
 				}
 
-				// If it is not zero, write it into the buffer
 				readSector(buffer + bufferOffset, dir[fileentry+6+sectorsLoaded]);
 
 				// protect the data you just wrote
 				bufferOffset += 512;
 				(*sectorRead)++;
 			}
-			// go home
+
 			return;
 		}
 	}
+}
+
+/**
+ * @Author Kaitlyn
+**/
+void executeProgram(char *programName){
+	// interrupt(0x21,3,"messag", fileBuffer, &sectorsRead);
+
+	int i; // loop var
+	char name[6]; // "messag" but for unknown program
+	char programBuffer[13312]; // programBuffer
+	int sectorsRead;
+
+	// find the right name to search
+	for(i=0;i<6;i++)
+	{
+		name[i] = programName[i];
+	}
+
+	// read into buffer
+	interrupt(0x21,3, name, programBuffer, &sectorsRead);
+
+	// copy the buffer into 0x2000
+	for(i =0; i<13312;i++)
+	{
+		// putInMemory(targetSegment, startAddress+i, message[i])
+		// targetSegment = where in memory
+		// startAddress = offset
+		putInMemory(0x2000, 0x0000+i, programBuffer[i]);
+	}
+
+	// launch program
+	launchProgram(0x2000);
 }
 
 

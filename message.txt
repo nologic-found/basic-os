@@ -1,2 +1,1 @@
-HELLO?!?!?! IS THIS THING ON?
-
+If you are reading this then readSector has been fixed

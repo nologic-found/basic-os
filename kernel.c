@@ -10,6 +10,11 @@ void readString(char *);
 void readSector(char *, int);
 void handleInterrupt21(int, int, int, int);
 void readFile(char *, char *, int *);
+void executeProgram(char *);
+
+void putInMemory(int, int, char);
+void launchProgram(int);
+
 main()
 {
 	char line[80];
@@ -17,6 +22,7 @@ main()
 
 	int sectorsRead;
 	char fileBuffer[13312]; // maximum file size
+
 	makeInterrupt21();
 
 	interrupt(0x21,3,"messag", fileBuffer, &sectorsRead);
@@ -32,6 +38,7 @@ main()
         interrupt(0x21, 1, line, 0, 0);
         interrupt(0x21, 0, line, 0, 0);
 
+	interrupt(0x21,4,"tstpr1",0,0);
 
 	while(1){}
 	return 0;
@@ -166,7 +173,10 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 	else if (ax == 3){
 		readFile((char *)bx, (char *)cx, (int *)dx);
 	}
-	else
+	else if (ax ==4)
+	{
+		executeProgram((char *)bx);
+	}else
 	{
 		printString("error: value of ax must be 0, 1, 2, or 3.");
 	}
@@ -230,6 +240,39 @@ void readFile(char *filename, char *buffer, int *sectorRead){
 			return;
 		}
 	}
+}
+
+/**
+ * @Author Kaitlyn
+**/
+void executeProgram(char *programName){
+	// interrupt(0x21,3,"messag", fileBuffer, &sectorsRead);
+
+	int i; // loop var
+	char name[6]; // "messag" but for unknown program
+	char programBuffer[13312]; // programBuffer
+	int sectorsRead;
+
+	// find the right name to search
+	for(i=0;i<6;i++)
+	{
+		name[i] = programName[i];
+	}
+
+	// read into buffer
+	interrupt(0x21,3, name, programBuffer, &sectorsRead);
+
+	// copy the buffer into 0x2000
+	for(i =0; i<13312;i++)
+	{
+		// putInMemory(targetSegment, startAddress+i, message[i])
+		// targetSegment = where in memory
+		// startAddress = offset
+		putInMemory(0x2000, 0x0000+i, programBuffer[i]);
+	}
+
+	// launch program
+	launchProgram(0x2000);
 }
 
 

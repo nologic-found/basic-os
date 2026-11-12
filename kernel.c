@@ -9,38 +9,47 @@ void printChar(char);
 void readString(char *);
 void readSector(char *, int);
 void handleInterrupt21(int, int, int, int);
+
 void readFile(char *, char *, int *);
 void executeProgram(char *);
+void terminate();
 
 void putInMemory(int, int, char);
 void launchProgram(int);
 
 main()
 {
-	char line[80];
-	char buffer[512];
+//	char line[80];
+//	char buffer[512];
 
-	int sectorsRead;
-	char fileBuffer[13312]; // maximum file size
+//	int sectorsRead;
+//	char fileBuffer[13312]; // maximum file size
+
+//	makeInterrupt21();
+
+//	interrupt(0x21,3,"messag", fileBuffer, &sectorsRead);
+
+//	if(sectorsRead>0){
+//		interrupt(0x21, 0, fileBuffer, 0,0); // print the file
+//	}else
+//	{
+//		interrupt(0x21, 0, "message not found\r\n",0,0); // error report
+//	}
+
+//	interrupt(0x21,0,"\r",0,0); // stop being ugly
+//        interrupt(0x21, 1, line, 0, 0);
+//        interrupt(0x21, 0, line, 0, 0);
+
+//	interrupt(0x21,4,"tstpr1",0,0);
+//	interrupt(0x21,4 ,"tstpr2",0,0);
+
+
+//	while(1){}
+	char shellBuffer[13312]; // max file size
 
 	makeInterrupt21();
-
-	interrupt(0x21,3,"messag", fileBuffer, &sectorsRead);
-
-	if(sectorsRead>0){
-		interrupt(0x21, 0, fileBuffer, 0,0); // print the file
-	}else
-	{
-		interrupt(0x21, 0, "message not found\r\n",0,0); // error report
-	}
-
-	interrupt(0x21,0,"\r",0,0); // stop being ugly
-        interrupt(0x21, 1, line, 0, 0);
-        interrupt(0x21, 0, line, 0, 0);
-
-	interrupt(0x21,4,"tstpr1",0,0);
-
-	while(1){}
+	interrupt(0x21,4,"shell",0,0);
+	
 	return 0;
 }
 
@@ -56,15 +65,18 @@ void printString(char *chars)
 {
 	char end_of_string = 0x0;
 	int i = 0;
+
+
 	while (chars[i] != end_of_string)
 	{
-		char ah = 0xe;
+		int ah = 0xe;
 		char al = chars[i];
 		int ax = ah * 256 + al;
 
 		// prints one character at the current cursor position
 		interrupt(0x10, ax, 0, 0, 0);
 		i++;
+
 	}
 }
 
@@ -94,6 +106,10 @@ void readString(char *line)
 	char empty_space = 0x20;
 	int i = 0;
 
+	printChar(13); // /r
+
+
+
 	while (i < 80)
 	{
 		char key_pressed = interrupt(0x16, 0, 0, 0, 0);
@@ -118,13 +134,9 @@ void readString(char *line)
 		}
 		if (key_pressed == enter_key)
 		{
-			line[i] = line_feed;//i++; 
-			printChar(line_feed);
-			i++;
-			line[i] = end_of_string;//printChar(end_of_string);
-			printChar(key_pressed);
-			//line[i] = line_feed;
-			//line[i + 1] = end_of_string;
+			line[i]= end_of_string;
+			printChar(13); // /r
+			printChar(10); // /n
 		}
 		break;
 	}
@@ -173,9 +185,13 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 	else if (ax == 3){
 		readFile((char *)bx, (char *)cx, (int *)dx);
 	}
-	else if (ax ==4)
+	else if (ax == 4)
 	{
 		executeProgram((char *)bx);
+	}
+	else if (ax == 5)
+	{
+		terminate();
 	}else
 	{
 		printString("error: value of ax must be 0, 1, 2, or 3.");
@@ -216,7 +232,7 @@ void readFile(char *filename, char *buffer, int *sectorRead){
 		}
 
 		// if we didn't break, then the file name is correct
-		if(i==6)
+		if ((i==6) || (filename[i] == '\0') )
 		{
 			// We are in the first 512 bytes
 			bufferOffset = 0;
@@ -225,7 +241,7 @@ void readFile(char *filename, char *buffer, int *sectorRead){
 			for(sectorsLoaded = 0; sectorsLoaded<26; sectorsLoaded++)
 			{
 				// check the sector in the directory, if it is zero then we have run out of sectors
-				if(dir[fileentry+i+sectorsLoaded]==0)
+				if(dir[fileentry+6+sectorsLoaded]==0)
 				{
 					break;
 				}
@@ -257,6 +273,12 @@ void executeProgram(char *programName){
 	for(i=0;i<6;i++)
 	{
 		name[i] = programName[i];
+
+		// correct for names which are less than 6 characters
+		if(programName[i] == '\0')
+		}
+			break;
+		}
 	}
 
 	// read into buffer
@@ -276,4 +298,18 @@ void executeProgram(char *programName){
 }
 
 
+/**
+ * @Author Kaitlyn
+**/
+void terminate()
+{
+	char shell[6];
+	shell[0] = 's';
+	shell[1] = 'h';
+	shell[2] = 'e';
+	shell[3] = 'l';
+	shell[4] = 'l';
+	shell[5]= '\0';
 
+	executeProgram(shell);
+}

@@ -24,11 +24,17 @@ gcc -o loadFile loadFile.c
 ./loadFile message.txt
 
 
-
+# load tstpr1
 bcc -ansi -c -o tstpr1.o tstpr1.c
 as86 -o userlib.o userlib.asm
 ld86 -d -o tstpr1 tstpr1.o userlib.o
 ./loadFile tstpr1
+
+# load tstpr2
+bcc -ansi -c -o tstpr2.o tstpr2.c
+as86 -o userlib.o userlib.asm
+ld86 -d -o tstpr2 tstpr2.o userlib.o
+./loadFile tstpr2
 
 # run the simulator
 java -jar simulator.jar

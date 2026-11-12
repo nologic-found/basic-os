@@ -263,7 +263,6 @@ void readFile(char *filename, char *buffer, int *sectorRead){
 **/
 void executeProgram(char *programName){
 	// interrupt(0x21,3,"messag", fileBuffer, &sectorsRead);
-
 	int i; // loop var
 	char name[6]; // "messag" but for unknown program
 	char programBuffer[13312]; // programBuffer
@@ -276,7 +275,7 @@ void executeProgram(char *programName){
 
 		// correct for names which are less than 6 characters
 		if(programName[i] == '\0')
-		}
+		{
 			break;
 		}
 	}

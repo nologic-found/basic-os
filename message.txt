@@ -1,1 +1,1 @@
-If you are reading this then readSector has been fixed
+If you are reading this then your type command is working!

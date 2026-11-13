@@ -13,14 +13,19 @@ bcc -ansi -c -o kernel_c.o kernel.c
 as86 kernel.asm -o  kernel_asm.o
 #link them together into one kernel
 ld86 -o kernel -d kernel_c.o kernel_asm.o
-
+#compile shell.c
+bcc -ansi -c -o shell_c.o shell.c
+#assemble userlib.asm
+as86 userlib.asm -o userlib.o
+#link userlib.o
+ld86 -o shell -d shell_c.o userlib.o
 #compile the loadFile
 gcc -o loadFile loadFile.c
-
-#runs loadFile with kernel as the arg
+#loads kernel on to diskc.img
 ./loadFile kernel
-
-# load message.txt
+#loads shell on to diskc.img
+./loadFile shell
+# loads message.txt onto diskc.img
 ./loadFile message.txt
 
 

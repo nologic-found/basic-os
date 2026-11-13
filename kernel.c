@@ -106,7 +106,7 @@ void readString(char *line)
 	char empty_space = 0x20;
 	int i = 0;
 
-	printChar(13); // /r
+	//printChar(13); // /r
 
 
 
@@ -126,9 +126,9 @@ void readString(char *line)
 			if (i > 0)
 			{
 				i--;
-				printChar(backspace);//printChar(key_pressed);
+				printChar(backspace);
 				printChar(empty_space);
-				printChar(backspace);//printChar(key_pressed);
+				printChar(backspace);
 			}
 			continue;
 		}
@@ -192,9 +192,14 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 	else if (ax == 5)
 	{
 		terminate();
-	}else
+	}
+	else if (ax ==6)
 	{
-		printString("error: value of ax must be 0, 1, 2, or 3.");
+		printChar((char*)bx);
+	} 
+	else
+	{
+		printString("error: value of ax must be 0, 1, 2,3, 4, or 5.");
 	}
 
 }
@@ -203,7 +208,7 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 /**
  *@Author Cecilia, Kaitlyn
 */
-
+ 
 void readFile(char *filename, char *buffer, int *sectorRead){
 	// Init
 	char dir[512];
@@ -228,11 +233,12 @@ void readFile(char *filename, char *buffer, int *sectorRead){
 			{
 				// Because we are breaking, sectorRead remains zero
 				break;
+
 			}
 		}
 
-		// if we didn't break, then the file name is correct
-		if ((i==6) || (filename[i] == '\0') )
+		// a match requires both filenames to end at the same position
+		if(i==6)
 		{
 			// We are in the first 512 bytes
 			bufferOffset = 0;
@@ -270,22 +276,28 @@ void executeProgram(char *programName){
 	int sectorsRead;
 
 	// find the right name to search
+
 	for(i=0;i<6;i++)
 	{
 		name[i] = programName[i];
 
 		// correct for names which are less than 6 characters
 		if(programName[i] == '\0')
-		}
+		{
 			break;
 		}
 	}
 
 	// read into buffer
 	interrupt(0x21,3, name, programBuffer, &sectorsRead);
+	
+	if(sectorsRead == 0){
+
+		return;
+	}
 
 	// copy the buffer into 0x2000
-	for(i =0; i<13312;i++)
+	for(i=0; i<13312; i++)
 	{
 		// putInMemory(targetSegment, startAddress+i, message[i])
 		// targetSegment = where in memory
@@ -301,6 +313,9 @@ void executeProgram(char *programName){
 /**
  * @Author Kaitlyn
 **/
+
+
+
 void terminate()
 {
 	char shell[6];
@@ -310,6 +325,10 @@ void terminate()
 	shell[3] = 'l';
 	shell[4] = 'l';
 	shell[5]= '\0';
-
+	
 	executeProgram(shell);
+	
 }
+
+
+

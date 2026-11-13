@@ -10,24 +10,18 @@ void readString(char *);
 void readSector(char *, int);
 void handleInterrupt21(int, int, int, int);
 void readFile(char *, char *, int *);
+void executeProgram(char *);
+
 void testReadFile();
 
 main()
 {
-	char line[80];
-	char buffer[512];
-	int sectorsRead;
-	char fileBuffer[13312];
 
 	makeInterrupt21();
-
-	testReadFile();
-
-
+	interrupt(0x21, 4, "tstpr1", 0, 0);
 	while (1)
 	{
 	}
-	return 0;
 }
 
 /**
@@ -81,7 +75,7 @@ void readString(char *line)
 
 	while (i < 80)
 	{
-		char key_pressed = interrupt(0x16, 0, 0, 0, 0);
+		key_pressed = interrupt(0x16, 0, 0, 0, 0);
 
 		if (key_pressed != enter_key && key_pressed != backspace)
 		{
@@ -136,18 +130,23 @@ void readFile(char *filename, char *buffer, int *sectorsRead)
 {
 
 	char dir[512];
-	int fileentry= 0;
+	int fileentry = 0;
 	int match = 0;
 	int i = 0;
 	int sectorOffset = 0;
 	int currentSector = 0;
 
 	*sectorsRead = 0;
-	
+
 	readSector(dir, 2);
 	// Iterating over directory sector
 	for (fileentry = 0; fileentry < 512; fileentry += 32)
 	{
+		/* Checks that at least one sector was read before runningk*/
+		if (sectorsRead <= 0)
+		{
+			return;
+		}
 		match = 1;
 		// check that the entry is empty
 		if (dir[fileentry] == 0)
@@ -164,8 +163,12 @@ void readFile(char *filename, char *buffer, int *sectorsRead)
 				match = 0;
 				break;
 			}
-			// test
-			printChar(i);
+			
+			// stops comparing once filenames reach zero
+			if (filename[i] == 0)
+			{
+				break;
+			}
 		}
 
 		// if we're here then, the entry is not empty and the names match.
@@ -187,6 +190,23 @@ void readFile(char *filename, char *buffer, int *sectorsRead)
 			return;
 		}
 	}
+}
+
+void executeProgram(char *filename)
+{
+	int segment = 0x2000;
+	char buffer[13312]; /*this is the maximum size of a file*/
+	int sectorsRead = 0;
+	int i = 0;
+
+	readFile(filename, buffer, &sectorsRead);
+
+	while (i < sectorsRead * 512)
+	{
+		putInMemory(segment, i, buffer[i]);
+		i++;
+	}
+	launchProgram(segment);
 }
 
 void testReadFile()
@@ -225,6 +245,10 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 	else if (ax == 3)
 	{
 		readFile((char *)bx, (char *)cx, (int *)dx);
+	}
+	else if (ax == 4)
+	{
+		executeProgram((char *)bx);
 	}
 	else
 	{

@@ -24,8 +24,14 @@ ld86 -d -o kernel kernel_c.o kernel_asm.o
 # Add secret file on disk
 # dd if=message.txt of=diskc.img bs=512 count=1 seek=30 conv=notrunc
 
-# add kernel to disk
-./loadFile kernel
+# compile tstpr1 and userlib
+bcc -ansi -c -o tstpr1.o tstpr1.c
+as86 -o userlib.o userlib.asm
+ld86 -d -o tstpr1 tstpr1.o userlib.o
 
-# Use loadfile to add message to disk
+gcc -o loadFile loadFile.c
+
+# loadfiles
+./loadFile kernel
+./loadFile tstpr1
 ./loadFile message.txt

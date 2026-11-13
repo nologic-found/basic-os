@@ -2,7 +2,7 @@
 # Build an Operating System from Scratch Project
 
 
-# ProjectB
+# Project B
 Kait:
 Developed the ReadSector
 

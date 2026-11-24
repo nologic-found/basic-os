@@ -8,6 +8,7 @@ void printString(char *);
 void printChar(char);
 void readString(char *);
 void readSector(char *, int);
+void writeSector(char *, int);
 void handleInterrupt21(int, int, int, int);
 
 void readFile(char *, char *, int *);
@@ -134,6 +135,21 @@ void readSector(char *buffer, int sector)
 	interrupt(0x13, ax, buffer, cx, dx);
 }
 
+void writeSector(char *buffer, int sector)
+{
+	int ah = 3;
+	int al = 1;
+	int ch = 0;
+	int cl = sector + 1;
+	int dh = 0;
+	int dl = 0x80;
+	int ax = ah * 256 + al;
+	int cx = ch * 256 + cl;
+	int dx = dh * 256 + dl;
+	interrupt(0x13, ax, buffer, cx, dx);
+
+}
+
 /**
  * @author Cecilia, Kaitlyn
  */
@@ -169,8 +185,8 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 	}
 	else if (ax == 6)
 	{
-		printChar((char*)bx);
-	} 
+		writeSector((char *)bx, cx);
+	}
 	else
 	{
 		printString("error: value of ax must be 0, 1, 2,3, 4, or 5.");

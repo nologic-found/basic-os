@@ -20,32 +20,6 @@ void launchProgram(int);
 
 main()
 {
-//	char line[80];
-//	char buffer[512];
-
-//	int sectorsRead;
-//	char fileBuffer[13312]; // maximum file size
-
-//	makeInterrupt21();
-
-//	interrupt(0x21,3,"messag", fileBuffer, &sectorsRead);
-
-//	if(sectorsRead>0){
-//		interrupt(0x21, 0, fileBuffer, 0,0); // print the file
-//	}else
-//	{
-//		interrupt(0x21, 0, "message not found\r\n",0,0); // error report
-//	}
-
-//	interrupt(0x21,0,"\r",0,0); // stop being ugly
-//        interrupt(0x21, 1, line, 0, 0);
-//        interrupt(0x21, 0, line, 0, 0);
-
-//	interrupt(0x21,4,"tstpr1",0,0);
-//	interrupt(0x21,4 ,"tstpr2",0,0);
-
-
-//	while(1){}
 	char shellBuffer[13312]; // max file size
 
 	makeInterrupt21();
@@ -212,6 +186,9 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 	else if (ax == 6)
 	{
 		writeSector((char *)bx, cx);
+	}
+	else if (ax = 7){
+		printChar((char*)bx);
 	}
 	else
 	{

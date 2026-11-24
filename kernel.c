@@ -44,12 +44,15 @@ void printString(char *chars)
 
 	while (chars[i] != end_of_string)
 	{
-		int ah = 0xe;
-		char al = chars[i];
-		int ax = ah * 256 + al;
+//		int ah = 0xe;
+//		char al = chars[i];
+//		int ax = ah * 256 + al;
 
 		// prints one character at the current cursor position
-		interrupt(0x10, ax, 0, 0, 0);
+//		interrupt(0x10, ax, 0, 0, 0);
+//		i++;
+
+		printChar(chars[i]);
 		i++;
 
 	}

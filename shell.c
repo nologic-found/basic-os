@@ -8,6 +8,8 @@ int main(){
 	int i = 0;    		//loop counter for getting the filename from user_input
 	int j = 0;		//loop counter for clearing arrays
 	int sectorsRead;	//tracks how many sectors were read
+
+	char test[2]; 		// Testing if this works
 	while(1){
 		
 		j = 0;
@@ -23,8 +25,11 @@ int main(){
 		}
 		
 		sectorsRead = 0; 	//reset sectorsRead 
+		test[0] = 13;		// fixing prints
+		test[1] = '\0';
+
+		syscall(0, test);  	//set cursor position to beginning of line
 		
-		syscall(7, 13);  	//set cursor position to beginning of line
 		syscall(0, "SHELL:>"); 	//print shell prompt
 		syscall(1, user_input); //reads the command entered by user
 		

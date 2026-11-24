@@ -187,6 +187,9 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 	{
 		writeSector((char *)bx, cx);
 	}
+	else if (ax = 7){
+		printChar((char*)bx);
+	}
 	else
 	{
 		printString("error: value of ax must be 0, 1, 2,3, 4, or 5.");

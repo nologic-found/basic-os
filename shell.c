@@ -24,7 +24,7 @@ int main(){
 		
 		sectorsRead = 0; 	//reset sectorsRead 
 		
-		syscall(6, 13);  	//set cursor position to beginning of line
+		syscall(7, 13);  	//set cursor position to beginning of line
 		syscall(0, "SHELL:>"); 	//print shell prompt
 		syscall(1, user_input); //reads the command entered by user
 		

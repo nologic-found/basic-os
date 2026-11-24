@@ -29,6 +29,7 @@ int main(){
 		test[1] = '\0';
 
 		syscall(0, test);  	//set cursor position to beginning of line
+		
 		syscall(0, "SHELL:>"); 	//print shell prompt
 		syscall(1, user_input); //reads the command entered by user
 		

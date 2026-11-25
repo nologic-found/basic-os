@@ -137,7 +137,11 @@ void readSector(char *buffer, int sector)
 	int dx = dh * 256 + dl;
 	interrupt(0x13, ax, buffer, cx, dx);
 }
-
+/**
+ * Writes to the sector at int sector?
+ *
+ * @author Kaitlyn
+ */
 void writeSector(char *buffer, int sector)
 {
 	int ah = 3;
@@ -190,12 +194,9 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 	{
 		writeSector((char *)bx, cx);
 	}
-	else if (ax = 7){
-		printChar((char*)bx);
-	}
 	else
 	{
-		printString("error: value of ax must be 0, 1, 2,3, 4, or 5.");
+		printString("error: value of ax must be between 0-6.");
 	}
 
 }

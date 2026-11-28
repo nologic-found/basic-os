@@ -10,8 +10,9 @@ void readString(char *);
 void readSector(char *, int);
 void writeSector(char *, int);
 void handleInterrupt21(int, int, int, int);
-
+void deleteFile(char *);
 void readFile(char *, char *, int *);
+void writeFile(char *, char *, int);
 void executeProgram(char *);
 void terminate();
 
@@ -21,10 +22,9 @@ void launchProgram(int);
 main()
 {
 	char shellBuffer[13312]; // max file size
-
 	makeInterrupt21();
+	interrupt(0x21,8,"this is a test message","testmg",3);
 	interrupt(0x21,4,"shell",0,0);
-	
 	return 0;
 }
 
@@ -194,6 +194,15 @@ void handleInterrupt21(int ax, int bx, int cx, int dx)
 	{
 		writeSector((char *)bx, cx);
 	}
+	else if (ax == 7)
+	{
+		deleteFile((char *)bx);
+	}
+	else if(ax == 8)
+	{
+
+		writeFile((char *)bx, (char *)cx, dx);
+	}
 	else
 	{
 		printString("error: value of ax must be between 0-6.");
@@ -326,6 +335,152 @@ void terminate()
 	executeProgram(shell);
 	
 }
+
+
+//@Author Cecilia
+void deleteFile(char *filename){
+	char dir[512]; 
+	char map[512];
+	int directoryEntry; 	// loop counter 1
+	int charIndex;		// loop counter 2, represents the position of the character being compared
+	int sector;
+	int fileFound;
+	int sectorOffset;
+
+	readSector(map, 1); //load map (located at sector 1) into char array
+	readSector(dir, 2); //load directory (located at sector 2) into char arrat
+	//search through the directory to find the filename, directories are 32 bytes per entry
+	for (directoryEntry = 0; directoryEntry < 512; directoryEntry += 32){		
+		// if the directory is empty, skip
+		if (dir[directoryEntry] == '\0'){
+			continue;
+		}
+
+		fileFound = 1;
+
+		//compare the filename in dir with the filename that is set to delete, which are up to 6 chars long
+		for(charIndex = 0; charIndex < 6; charIndex++){
+			//if filename ends early, directory entry must also end or be null-padded
+			if(filename[charIndex] == '\0'){
+				if(dir[directoryEntry + charIndex] != '\0'){
+					fileFound = 0;
+				}
+				break;
+			}
+
+			//if the characters are different then file was not in that directory
+			if(dir[directoryEntry + charIndex] != filename[charIndex]){
+				fileFound = 0;
+				break;
+			}
+		}
+
+		// if the filename matches the file in the directory, then delete the file
+		if (fileFound){
+			sectorOffset = directoryEntry + 6; //position of the first sector number
+
+			//go through the sector nums that belong to the file 
+			while(sectorOffset < directoryEntry + 32 && dir[sectorOffset] != '\0'){
+				sector = dir[sectorOffset]; 
+				map[sector] = 0; //set corresponding map byte to 0 for each sector so that the sector becomes available
+				sectorOffset++; 
+			}
+
+			// set the first letter of the filename to null (essentially this marks the file as deleted)
+			dir[directoryEntry] = '\0';
+
+			// save updated map and directory back to the disk
+			writeSector(map, 1);
+			writeSector(dir, 2);
+			return; 
+		}
+	}
+}
+
+void writeFile(char *buffer, char *filename, int numberOfSectors) {
+	char map[512];
+	char dir[512];
+	int directoryEntry;
+	int charIndex;
+	int sector;
+	int sectorOffset;
+	int foundSlot;
+	int entryFound;
+	int sectorFound;
+	int sectorIndex;
+
+
+	// load map and directory into memory
+	
+	foundSlot = 0;
+	entryFound = 0;
+	readSector(map, 1);
+	readSector(dir, 2);
+	//look for a free directory entry
+	for (directoryEntry = 0; directoryEntry < 512; directoryEntry += 32) {
+		if (dir[directoryEntry] == '\0') {
+			foundSlot = directoryEntry; 
+			entryFound = 1;
+			break;
+		}
+	}
+	if (!entryFound) { //if there are no free directory entries, return
+		return;
+	}
+
+	//for each char in the filename
+	for (charIndex = 0; charIndex < 6; charIndex++) {
+		dir[foundSlot + charIndex] = filename[charIndex]; //replace the directory entroes with each character of the filename
+		if (filename[charIndex] == '\0') {  //when end of filename
+			for (sectorOffset = charIndex + 1; sectorOffset < 6; sectorOffset++) {// for short filenames set the directory entries after the actual characters to null
+				dir[foundSlot + sectorOffset] = '\0';
+			}
+			break;
+		}
+	}
+
+	if (numberOfSectors > 26) { //number of sectors cannot go higher than 26
+		numberOfSectors = 26;
+	}
+
+	//find free sectors up to  numberOfSectors
+	for (sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++) {
+		sector = 0;
+		sectorFound = 0;
+		for (sectorOffset = 3; sectorOffset < 512; sectorOffset++) { //start at 3 because we dont want to overwrite bootloader
+			if (map[sectorOffset] == 0) { //if the sector is free than we mark it as found
+				sector = sectorOffset; 
+				sectorFound = 1;
+				break;
+			}
+		}
+		if (!sectorFound) { //if there are no sectors available return
+			return;
+		}
+
+		map[sector] = 0xFF;  //set sector as full
+		dir[foundSlot + 6 + sectorIndex] = sector; //sets sector number to the directory entries sector list
+		writeSector(buffer + sectorIndex * 512, sector); //write 512 bytes from the buffer holding the file to the sector
+	}
+
+	for (sectorOffset = 6 + numberOfSectors; sectorOffset < 32; sectorOffset++) { //fill in remaining bytes of the directory entry to 0
+		dir[foundSlot + sectorOffset] = 0;
+	}
+
+	//write map and directory sectors back to disk
+	writeSector(map, 1);
+	writeSector(dir, 2);
+}
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -62,6 +62,7 @@ int main(){
 				// checks if the file was successfully read, if so than display its contents
 				if(sectorsRead > 0){
 					syscall(0, buffer);
+					syscall(0, "\r\n");
 				}
 
 				// error if file wasn't found
@@ -105,8 +106,34 @@ int main(){
 				}
 			}
 
-		}else if (user_input[0] == 'd' && user_input[1] == 'i' && user_input[2] == 'r' && (user_input[4] == ' ' || user_input[4] == '\0')){
+		}
+	
+		else if (user_input[0] == 'd' && user_input[1] == 'i' && user_input[2] == 'r' && (user_input[4] == ' ' || user_input[4] == '\0')){
 			dir();
+		}
+
+		else if (user_input[0] == 'd' && user_input[1] == 'e' && user_input[2] == 'l' && (user_input[3] == ' ' || user_input[3] == '\0')){
+
+			i = 0;		//reset counter
+
+			// copy up to 6 chars of the filename from user input
+			while(i < 6 && user_input[i+4] != '\0'){
+				filename[i] = user_input[i+4];
+				i++;
+			}
+
+			filename[i] = '\0';  //add null terminator to filename
+
+			// make sure filename contains exacly 6 chars
+			if(user_input[10] != '\0' || user_input[9] == '\0'){
+				syscall(0, "File not found. Filename must be the first 6 characters of the file. \r\n");
+			}
+
+			else {
+				//read the file that user entered into buffer
+				syscall(7, filename, 0, 0);
+
+			}
 		}
 
 		//runs if command is not recognized by the shell
